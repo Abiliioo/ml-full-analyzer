@@ -1,0 +1,37 @@
+# Dependências
+frontend/node_modules/
+
+# Build
+frontend/dist/
+frontend/.vite/
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+
+# Dados sensíveis / relatórios exportados do ML
+Merheje/
+Master/
+*.xlsm
+*.xlsx
+*.csv
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Claude
+.claude/
