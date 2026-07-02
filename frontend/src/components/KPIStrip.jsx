@@ -1,7 +1,7 @@
 import React from 'react';
 import { fmtMoedaK } from '../lib/formatters.js';
 
-export default function KPIStrip({ kpi }) {
+export default function KPIStrip({ kpi, onSave, saveMsg }) {
   if (!kpi) return null;
   return (
     <div className="kpi-strip">
@@ -32,6 +32,9 @@ export default function KPIStrip({ kpi }) {
         </span>
         <span className="kpi-sub">todos os anúncios</span>
       </div>
+      <button className={`kpi-save-btn ${saveMsg ? 'kpi-save-btn--ok' : ''}`} onClick={onSave} title="Salvar snapshot desta análise">
+        {saveMsg ? '✓ Salvo' : '📸 Salvar análise'}
+      </button>
     </div>
   );
 }

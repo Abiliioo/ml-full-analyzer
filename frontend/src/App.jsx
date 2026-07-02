@@ -7,8 +7,10 @@ import VisaoGeral from './components/VisaoGeral.jsx';
 import AnuncioTable from './components/AnuncioTable.jsx';
 import AspirantesTab from './components/AspirantesTab.jsx';
 import ProvisaoTab from './components/ProvisaoTab.jsx';
+import HistoricoTab from './components/HistoricoTab.jsx';
 import { parseVendasFile, parseEstoqueFile } from './lib/parser.js';
 import { calcularAnalise } from './lib/analise.js';
+import { saveSnapshot, loadSnapshots } from './lib/snapshots.js';
 
 export default function App() {
   const [theme, setTheme]         = useState(() => localStorage.getItem('analise-theme') || 'dark');
@@ -31,6 +33,8 @@ export default function App() {
   const [filters, setFilters]       = useState({ search: '', situacao: '', curva: '' });
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [showUpload, setShowUpload] = useState(true);
+  const [snapshots, setSnapshots]   = useState(() => loadSnapshots());
+  const [saveMsg, setSaveMsg]       = useState(null);
   const uploadRef = useRef(null);
 
   React.useEffect(() => {
@@ -102,6 +106,16 @@ export default function App() {
     }
   }, [vendasData, estoqueData]);
 
+  function handleSaveSnapshot() {
+    saveSnapshot(analise, {
+      vendasFilename:  vendasStatus?.filename,
+      estoqueFilename: estoqueStatus?.filename,
+    });
+    setSnapshots(loadSnapshots());
+    setSaveMsg('Análise salva!');
+    setTimeout(() => setSaveMsg(null), 2500);
+  }
+
   function toggleKey(key) {
     setSelectedKeys(prev => {
       const next = new Set(prev);
@@ -153,7 +167,7 @@ export default function App() {
 
       {hasData && (
         <div className="dashboard" ref={dashboardRef}>
-          <KPIStrip kpi={kpi} />
+          <KPIStrip kpi={kpi} onSave={handleSaveSnapshot} saveMsg={saveMsg} />
 
           <nav className="tab-bar">
             {[
@@ -161,6 +175,7 @@ export default function App() {
               { id: 'full',       label: 'No Full',    badge: fullItems.length,      bc: 'blue' },
               { id: 'aspirantes', label: 'Aspirantes', badge: aspiranteItems.length, bc: 'purple' },
               { id: 'provisao',   label: 'Provisão',   badge: provisaoItems.length,  bc: provisaoItems.length > 0 ? 'blue' : '' },
+              { id: 'historico',  label: 'Histórico',  badge: snapshots.length,       bc: snapshots.length > 0 ? 'purple' : '' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -204,6 +219,14 @@ export default function App() {
               allFull={fullItems}
               selectedKeys={selectedKeys}
               onToggleKey={toggleKey}
+            />
+          )}
+
+          {activeTab === 'historico' && (
+            <HistoricoTab
+              snapshots={snapshots}
+              analise={analise}
+              onSnapshotsChange={() => setSnapshots(loadSnapshots())}
             />
           )}
         </div>
