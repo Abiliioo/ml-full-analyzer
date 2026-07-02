@@ -1,6 +1,12 @@
 import React, { useRef, useState } from 'react';
 
-function DropZone({ label, hint, loaded, filename, status, onFile }) {
+function fmtDateBR(d) {
+  if (!d) return null;
+  const dt = d instanceof Date ? d : new Date(d);
+  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function DropZone({ label, hint, loaded, filename, status, period, onFile }) {
   const [over, setOver] = useState(false);
   const inputRef = useRef();
 
@@ -28,6 +34,11 @@ function DropZone({ label, hint, loaded, filename, status, onFile }) {
       {filename && !status && (
         <div className="dz-status dz-status--success">📄 {filename}</div>
       )}
+      {loaded && period?.from && period?.to && (
+        <div className="dz-period">
+          {fmtDateBR(period.from)} – {fmtDateBR(period.to)}
+        </div>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -39,7 +50,7 @@ function DropZone({ label, hint, loaded, filename, status, onFile }) {
   );
 }
 
-export default function Upload({ vendasStatus, estoqueStatus, onVendasFile, onEstoqueFile }) {
+export default function Upload({ vendasStatus, estoqueStatus, vendasPeriod, onVendasFile, onEstoqueFile }) {
   return (
     <div className="upload">
       <div className="upload__headline">
@@ -53,6 +64,7 @@ export default function Upload({ vendasStatus, estoqueStatus, onVendasFile, onEs
           loaded={vendasStatus?.type === 'success'}
           filename={vendasStatus?.filename}
           status={vendasStatus?.type !== 'success' ? vendasStatus : null}
+          period={vendasPeriod}
           onFile={onVendasFile}
         />
         <DropZone

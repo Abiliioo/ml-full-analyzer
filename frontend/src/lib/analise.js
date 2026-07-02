@@ -34,7 +34,10 @@ function calcMetrics(l30d, l7d, total, atual, curva) {
   const taxa     = mediaL7D > 0 ? mediaL7D : diaria;
 
   // Tendência: variação relativa entre média L7D e média L30D
-  const tendencia = diaria > 0 ? (mediaL7D - diaria) / diaria : (mediaL7D > 0 ? 1 : 0);
+  // Suprimida quando volume é muito baixo (< 0.1 un/dia) para evitar ruído
+  const tendencia = (diaria > 0 && (mediaL7D >= 0.1 || diaria >= 0.1))
+    ? (mediaL7D - diaria) / diaria
+    : null;
 
   // Cobertura: estoque total (atual + pend + transf) / taxa → horizonte de planejamento
   const cobertura = taxa > 0 ? total / taxa : (total > 0 ? 999 : 0);
@@ -177,6 +180,11 @@ export function calcularAnalise(estoqueList, vendasBySku) {
       }
     }
 
+    // Para aspirantes viáveis: envio = projeção (quanto precisaria enviar para iniciar no Full)
+    const envioFinal = item.segmento !== 'full'
+      ? (viavel ? skuM.projecao : 0)
+      : envio;
+
     return {
       key:          item.key,
       sku:          item.sku,
@@ -203,7 +211,7 @@ export function calcularAnalise(estoqueList, vendasBySku) {
       viavel,
       situacao,
       projecao:     skuM.projecao,
-      envio,
+      envio:        envioFinal,
       anuncios,
     };
   }).sort((a, b) => b.faturamento - a.faturamento);

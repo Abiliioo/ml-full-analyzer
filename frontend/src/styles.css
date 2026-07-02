@@ -78,6 +78,7 @@ button { font-family: inherit; cursor: pointer; }
 .dz-status--success { color: var(--green-text); }
 .dz-status--error   { color: var(--red-text); }
 .dz-status--loading { color: var(--accent); }
+.dz-period { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
 
 /* ── Dashboard ───────────────────────────────────────────── */
 .dashboard { max-width: 1600px; margin: 0 auto; padding: 20px 20px 60px; }
@@ -273,6 +274,7 @@ button { font-family: inherit; cursor: pointer; }
 .stat-row__bar    { height: 100%; border-radius: 3px; transition: width .4s; }
 .bar--ruptura { background: var(--red); }
 .bar--repor   { background: var(--orange); }
+.bar--ctrl    { background: var(--accent); }
 .bar--ok      { background: var(--green); }
 .bar--excesso { background: var(--text-dim); }
 .bar--sem     { background: var(--border-2); }

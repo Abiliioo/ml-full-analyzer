@@ -71,7 +71,7 @@ export default function VisaoGeral({ fullItems, aspiranteItems, analise }) {
                 <SitBadge sit={item.situacao} />
               </div>
               <div className="action-item__info">
-                <div className="action-item__code">{item.anuncio}</div>
+                <div className="action-item__code">{item.sku}</div>
                 <div className="action-item__name">{item.titulo}</div>
                 <div className="action-item__meta">
                   <span className={`badge badge--curva-${item.curva?.toLowerCase()}`}>{item.curva}</span>
@@ -100,7 +100,8 @@ export default function VisaoGeral({ fullItems, aspiranteItems, analise }) {
           <div className="stat-card__title">Situação do Estoque Full</div>
           <BarRow label="Ruptura"       count={sitCounts['Ruptura']||0}       total={totalFull} barClass="bar--ruptura" fatStr={null} />
           <BarRow label="Repor estoque" count={sitCounts['Repor estoque']||0} total={totalFull} barClass="bar--repor"   fatStr={null} />
-          <BarRow label="OK"            count={sitCounts['OK']||0}            total={totalFull} barClass="bar--ok"      fatStr={null} />
+          <BarRow label="Controlado"    count={sitCounts['Controlado']||0}    total={totalFull} barClass="bar--ctrl"    fatStr={null} />
+          <BarRow label="Margem/Acima"  count={(sitCounts['Margem']||0)+(sitCounts['Estoque acima']||0)} total={totalFull} barClass="bar--ok" fatStr={null} />
           <BarRow label="Excesso"       count={sitCounts['Excesso']||0}       total={totalFull} barClass="bar--excesso" fatStr={null} />
           <BarRow label="Sem movimento" count={sitCounts['Sem movimento']||0} total={totalFull} barClass="bar--sem"     fatStr={null} />
         </div>

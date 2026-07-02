@@ -12,10 +12,21 @@ import { calcularAnalise } from './lib/analise.js';
 
 export default function App() {
   const [theme, setTheme]         = useState(() => localStorage.getItem('analise-theme') || 'dark');
-  const [vendasData, setVendasData]     = useState(null);
-  const [estoqueData, setEstoqueData]   = useState(null);
-  const [vendasStatus, setVendasStatus]   = useState(null);
-  const [estoqueStatus, setEstoqueStatus] = useState(null);
+  const [vendasData, setVendasData]     = useState(() => {
+    try { const s = sessionStorage.getItem('analise-vendas'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [estoqueData, setEstoqueData]   = useState(() => {
+    try { const s = sessionStorage.getItem('analise-estoque'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [vendasPeriod, setVendasPeriod] = useState(() => {
+    try { const s = sessionStorage.getItem('analise-vendas-period'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [vendasStatus, setVendasStatus]   = useState(() => {
+    try { const s = sessionStorage.getItem('analise-vendas-status'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [estoqueStatus, setEstoqueStatus] = useState(() => {
+    try { const s = sessionStorage.getItem('analise-estoque-status'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [activeTab, setActiveTab]   = useState('overview');
   const [filters, setFilters]       = useState({ search: '', situacao: '', curva: '' });
   const [selectedKeys, setSelectedKeys] = useState(new Set());
@@ -32,9 +43,16 @@ export default function App() {
   async function handleVendasFile(file) {
     setVendasStatus({ type: 'loading', msg: 'Processando...', filename: file.name });
     try {
-      const data = await parseVendasFile(file);
+      const { data, period } = await parseVendasFile(file);
       setVendasData(data);
-      setVendasStatus({ type: 'success', filename: file.name });
+      setVendasPeriod(period);
+      const status = { type: 'success', filename: file.name };
+      setVendasStatus(status);
+      try {
+        sessionStorage.setItem('analise-vendas', JSON.stringify(data));
+        sessionStorage.setItem('analise-vendas-period', JSON.stringify(period));
+        sessionStorage.setItem('analise-vendas-status', JSON.stringify(status));
+      } catch { /* quota exceeded — sem persistência */ }
     } catch (e) {
       setVendasStatus({ type: 'error', msg: e.message, filename: file.name });
     }
@@ -45,7 +63,12 @@ export default function App() {
     try {
       const data = await parseEstoqueFile(file);
       setEstoqueData(data);
-      setEstoqueStatus({ type: 'success', filename: file.name });
+      const status = { type: 'success', filename: file.name };
+      setEstoqueStatus(status);
+      try {
+        sessionStorage.setItem('analise-estoque', JSON.stringify(data));
+        sessionStorage.setItem('analise-estoque-status', JSON.stringify(status));
+      } catch { /* quota exceeded */ }
     } catch (e) {
       setEstoqueStatus({ type: 'error', msg: e.message, filename: file.name });
     }
@@ -121,6 +144,7 @@ export default function App() {
           <Upload
             vendasStatus={vendasStatus}
             estoqueStatus={estoqueStatus}
+            vendasPeriod={vendasPeriod}
             onVendasFile={handleVendasFile}
             onEstoqueFile={handleEstoqueFile}
           />

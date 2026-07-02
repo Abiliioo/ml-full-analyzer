@@ -164,6 +164,7 @@ export default function AspirantesTab({ items }) {
                 <th className="num">Full (hist.)</th>
                 <th className="num">Outros</th>
                 <th className={`num ${thC('faturamento')}`} onClick={() => toggleSort('faturamento')}>Fat. 30d</th>
+                <th className="num" title="Quantidade estimada para iniciar no Full (39 dias de demanda)">Envio p/ entrar</th>
               </tr>
             </thead>
             <tbody>
@@ -188,6 +189,11 @@ export default function AspirantesTab({ items }) {
                   <td className="num">{fmtNum(item.full)}</td>
                   <td className="num">{fmtNum(item.envios)}</td>
                   <td className="num">{fmtMoeda(item.faturamento)}</td>
+                  <td className="num">
+                    {item.viavel && item.envio > 0
+                      ? <span className="envio-badge">{fmtNum(item.envio)}</span>
+                      : <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -197,6 +203,7 @@ export default function AspirantesTab({ items }) {
                 <td className="num">{fmtNum(sorted.reduce((s, i) => s + i.l30d, 0))}</td>
                 <td /><td />
                 <td className="num">{fmtMoeda(sorted.reduce((s, i) => s + i.faturamento, 0))}</td>
+                <td className="num">{fmtNum(sorted.filter(i => i.viavel).reduce((s, i) => s + (i.envio || 0), 0))}</td>
               </tr>
             </tfoot>
           </table>

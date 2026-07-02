@@ -149,6 +149,7 @@ function parseVendasRaw(sheet) {
 
   const registros = [];
   let maxDate = null;
+  let minDate = null;
 
   for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i];
@@ -160,6 +161,7 @@ function parseVendasRaw(sheet) {
 
     const saleDate = parseBRDate(row[cols.data]);
     if (saleDate && (!maxDate || saleDate > maxDate)) maxDate = saleDate;
+    if (saleDate && (!minDate || saleDate < minDate)) minDate = saleDate;
 
     const anuncioRaw = cols.anuncio >= 0 ? String(row[cols.anuncio] || '') : '';
     const anuncioId  = normalizeAnuncioId(anuncioRaw) || '';
@@ -181,11 +183,12 @@ function parseVendasRaw(sheet) {
   const d7  = new Date(ref); d7.setDate(d7.getDate() - 7);
 
   const dict = {};
+  const period = { from: minDate, to: maxDate };
 
   for (const r of registros) {
     const inL30 = !r.date || r.date >= d30;
     if (!inL30) continue;
-    const inL7 = !r.date || r.date >= d7;
+    const inL7 = r.date && r.date >= d7;
 
     if (!dict[r.sku]) {
       dict[r.sku] = { titulo: '', l30d: 0, l7d: 0, faturamento: 0, full: 0, envios: 0, anuncios: {} };
@@ -214,7 +217,7 @@ function parseVendasRaw(sheet) {
     }
   }
 
-  return dict;
+  return { dict, period };
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -248,15 +251,19 @@ function hasSkuHeader(rows) {
   return -1;
 }
 
-// Detecta o layout da aba "Resumo" vs "Boa qualidade" pelo nº de colunas
-// Resumo tem tamanho/categoria/status/full → 4 cols extras antes dos números
+// Detecta o layout da aba "Resumo" vs "Boa qualidade"
+// Usa nº de colunas + validação de conteúdo (col[8] tem "Ativo"/"Inativo" na aba Resumo)
 function detectLayout(rows) {
   const nCols = rows[0]?.length || 0;
-  // Aba Resumo tem ~29 colunas; aba Boa qualidade tem ~13
-  if (nCols >= 20) {
+  const sample = rows.slice(0, 5);
+  // Aba Resumo tem col[8] = status do anúncio ("Ativo" / "Inativo" / "Pausado")
+  const hasStatusCol = sample.some(r => {
+    const v = String(r[8] || '').toLowerCase();
+    return v === 'ativo' || v === 'inativo' || v === 'pausado';
+  });
+  if (nCols >= 20 || hasStatusCol) {
     // Resumo (29 cols verificado empiricamente no arquivo ML):
     //   col 17 = Aptas para venda, col 14 = Entrada pendente, col 15 = Em transferência
-    //   col 10 = total geral no sistema (NÃO é aptas disponíveis)
     return { sku: 2, mlb: 3, mlbu: 4, titulo: 5, aptas: 17, pendente: 14, transferencia: 15 };
   } else {
     // Boa qualidade (13 cols): col 9=aptas, col 10=transferência (sem pendente)
@@ -380,13 +387,21 @@ function parseEstoqueComCabecalho(rows, headerIdx) {
 export async function parseVendasFile(file) {
   const wb    = await readExcelFile(file);
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  const dict  = parseVendasRaw(sheet);
-  if (!Object.keys(dict).length)
+  const { dict, period } = parseVendasRaw(sheet);
+  if (!Object.keys(dict).length) {
+    // Tenta detectar se o usuário carregou o arquivo de estoque por engano
+    const rows = sheetToRows(sheet);
+    const nCols = rows[0]?.length || 0;
+    if (nCols >= 10 && rows[0]?.some(c => String(c || '').length > 5 && !/data|status|sku/i.test(String(c)))) {
+      throw new Error('Nenhum dado de venda encontrado. Verifique se carregou o relatório de vendas (não o de estoque).');
+    }
     throw new Error('Nenhum dado de venda encontrado. Verifique se é o relatório correto.');
-  return dict;
+  }
+  return { data: dict, period };
 }
 
 export async function parseEstoqueFile(file) {
+
   const wb = await readExcelFile(file);
 
   // Prefere aba "Resumo" (tem todos os itens); fallback para a maior
@@ -403,7 +418,17 @@ export async function parseEstoqueFile(file) {
     if (data.length > best.length) best = data;
   }
 
-  if (!best.length)
+  if (!best.length) {
+    // Detecta se o usuário carregou o arquivo de vendas por engano (tem coluna "status")
+    const firstSheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = sheetToRows(firstSheet);
+    const hasVendasCols = rows.slice(0, 15).some(r =>
+      r.some(c => /estado|status do pedido/i.test(String(c || '')))
+    );
+    if (hasVendasCols) {
+      throw new Error('Nenhum dado de estoque encontrado. Verifique se carregou o relatório de Estoque Full (não o de vendas).');
+    }
     throw new Error('Nenhum dado de estoque encontrado. Verifique se é o relatório correto.');
+  }
   return best;
 }

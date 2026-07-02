@@ -1,14 +1,15 @@
 import * as XLSX from 'xlsx';
+import { formatMLBCode } from './parser.js';
 
 export function exportProvisaoXlsx(items, filename = 'provisao_full.xlsx') {
   const header = [
-    '# Anúncio', 'SKU', 'Produto', 'Curva',
+    'MLB(s)', 'SKU', 'Produto', 'Curva',
     'Envio Sugerido', 'Situação', 'Cobertura (d)', 'Estoque Total',
     'L30D', 'L7D', 'Faturamento 30d',
   ];
 
   const rows = items.map(i => [
-    i.anuncio,
+    (i.anuncios || []).filter(a => a.isFullMlb).map(a => formatMLBCode(a.id)).join(' | ') || '—',
     i.sku,
     i.titulo,
     i.curva,
